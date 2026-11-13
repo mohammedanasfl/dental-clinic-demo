@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DentCare | Premium Dental Excellence</title>
+  <meta name="theme-color" content="#091e3e">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300668a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7.5 3C4.9 3 3 5 3 7.6c0 2 .9 3.4 1.5 5.900.6 2.600.9 7.500 2.600 7.500 1.400 0 1.600-4.400 2.900-4.400h4c1.300 0 1.500 4.400 2.900 4.400 1.700 0 2-4.900 2.600-7.500C20.100 11 21 9.600 21 7.600 21 5 19.100 3 16.500 3c-1.700 0-2.800 1-4.500 1S9.200 3 7.500 3z'/%3E%3C/svg%3E">
+
+  <!-- Enable the motion layer only when the visitor has not asked for reduced motion.
+       Without JS (or with reduced motion) every section is simply visible. -->
+  <script>
+    (function () {
+      var d = document.documentElement;
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        d.classList.add('motion');
+        // safety net: if the animation scripts never report ready, show everything
+        window.setTimeout(function () { if (!window.__dcReady) d.classList.remove('motion'); }, 5000);
+      }
+    })();
+  </script>
+
+  <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/outfit-latin.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/jakarta-latin.woff2" crossorigin>
+  <link rel="preload" as="image" type="image/webp" media="(min-width: 1024px)" href="/assets/img/stage-1-1408.webp" imagesrcset="%BASE_URL%assets/img/stage-1-960.webp 960w, %BASE_URL%assets/img/stage-1-1408.webp 1408w, %BASE_URL%assets/img/stage-1-2112.webp 2112w" imagesizes="100vw" fetchpriority="high">
+  <link rel="preload" as="image" type="image/webp" media="(max-width: 1023px)" href="/assets/img/hero-1-614.webp" imagesrcset="%BASE_URL%assets/img/hero-1-480.webp 480w, %BASE_URL%assets/img/hero-1-614.webp 614w" imagesizes="448px" fetchpriority="high">
+</head>
+<body>
+  <div id="root"></div>
+  <noscript>DentCare needs JavaScript to display this page.</noscript>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>

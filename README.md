@@ -1,62 +1,74 @@
-# Dental Clinic Demo
+# DentCare — dental clinic site
 
-A static, single-page website for a dental clinic (Home, About, Services, Appointment, Dentists, Contact), built with HTML, CSS and JavaScript, with scroll-driven motion powered by GSAP, ScrollTrigger and Lenis. The design follows the Stitch project "DentCare Website Redesign" (design system: *Porcelain & Cobalt Sanctuary*). There is no build step.
+A single-page, scroll-driven website for a dental clinic (Home, About, Services, Appointment, Dentists, Contact), built with **React 18 + Vite**, with motion by **GSAP + ScrollTrigger**, **Lenis** and **Framer Motion**. The design follows the Stitch project "DentCare Website Redesign" (design system: *Porcelain & Cobalt Sanctuary*).
 
-**Live URL (once GitHub Pages is enabled):** <https://mohammedanasfl.github.io/dental-clinic-demo/>
+**Live URL (GitHub Pages):** <https://mohammedanasfl.github.io/dental-clinic-demo/>
 
-## Folder structure
-
-```
-.
-├── LICENSE.txt        License terms for the original site template (kept outside docs/, so it is not published)
-├── README.md
-└── docs/              The published site (GitHub Pages serves this folder)
-    ├── .nojekyll      Tells GitHub Pages to serve files as-is, without Jekyll processing
-    ├── index.html     The whole site: one continuous page
-    ├── about.html, service.html, team.html, contact.html
-    │                  Redirect stubs that send old links to the matching section of index.html
-    ├── assets/
-    │   ├── css/main.css      Design tokens + all styles (hover/focus micro-interactions live here)
-    │   ├── js/motion.js      Motion system: durations, easings, split-words, reveal helpers
-    │   ├── js/hero.js        Hero intro + pinned, scroll-driven film (full-bleed stage, captions, iris)
-    │   ├── js/sections.js    Per-section scroll choreography
-    │   ├── js/app.js         Lenis, header, scroll-spy, mobile menu, forms, magnetic buttons
-    │   ├── vendor/           GSAP 3.13, ScrollTrigger 3.13, Lenis 1.1.20 (self-hosted)
-    │   ├── fonts/            Outfit + Plus Jakarta Sans variable fonts (latin subset, preloaded)
-    │   └── img/              Optimised WebP images (the SVG icon sprite is inlined in index.html)
-```
-
-Fonts and scripts are self-hosted. Only the Google Maps embed loads from a public CDN.
-
-### Motion notes
-
-- On desktop (width 1024px or more, height 640px or more) the hero pins for about 1.6 screens and plays a scroll-scrubbed film: the image card expands to a full-bleed photo, two chapter captions land in big type over an outlined wordmark, a circular iris opens onto the second photo, and the booking CTA arrives before the About section slides over like a curtain. Everywhere else it does not pin.
-- Other motion: the About lead paragraph reads itself in word by word, service cards flip up in 3D (with cursor tilt and spotlight), a scroll-velocity marquee of the four services sits above the booking section, the five dentist cards fan out from a stack (1280px and wider), icons draw themselves in, the phone number rolls in, the footer wordmark rises letter by letter, and a progress bar tracks the page.
-- Lenis only smooths mouse-wheel scrolling; touch scrolling stays native.
-- With `prefers-reduced-motion: reduce` there is no Lenis, no pinning, no parallax and no entrance animation: every section is simply visible.
-- Anything scroll-driven is created inside `gsap.matchMedia()`, so it is cleaned up and rebuilt on resize without duplicate ScrollTriggers.
-
-## Run locally
-
-From the repository root:
+## Scripts
 
 ```bash
-python3 -m http.server -d docs 8000
+npm install
+npm run dev       # dev server with hot reload  → http://localhost:5173/dental-clinic-demo/
+npm run build     # production build → docs/
+npm run preview   # serve the production build → http://localhost:4173/dental-clinic-demo/
+npm run lint      # ESLint (react + react-hooks rules)
 ```
 
-Then open <http://localhost:8000/>.
+Requires Node 20+.
 
 ## Publish with GitHub Pages
 
-1. Push this branch to GitHub.
-2. In the repository, go to **Settings → Pages**.
-3. Under **Build and deployment**, set **Source** to **Deploy from a branch**.
-4. Choose this branch and the **/docs** folder, then click **Save**.
-5. After the first deployment finishes (usually a minute or two), the site is available at the URL above.
+GitHub Pages serves the **`docs/`** folder of this branch, and `docs/` is the **build output** — never edit it by hand.
+
+1. `npm run build`
+2. Commit the updated `docs/` together with your source changes and push.
+3. In **Settings → Pages**, the source stays **Deploy from a branch → /docs**.
+
+The site lives under `/dental-clinic-demo/`, which is set as Vite's `base`. For a custom domain or another path build with `BASE_PATH=/ npm run build`.
+
+## Project structure
+
+```
+.
+├── index.html               Vite entry (preloads, motion-class bootstrap)
+├── vite.config.js           base path, build → docs/, vendor chunks
+├── public/                  Copied as-is into docs/
+│   ├── assets/fonts/        Outfit + Plus Jakarta Sans variable fonts (latin, preloaded)
+│   ├── assets/img/          Optimised WebP images
+│   ├── about|service|team|contact.html   Redirect stubs from the old multi-page site
+│   └── .nojekyll
+├── src/
+│   ├── main.jsx · App.jsx   Entry and app shell (menu state, motion layer lifecycle)
+│   ├── components/          One React component per section (Hero, About, Services, …)
+│   ├── hooks/               Scroll flags, scroll-spy, anchors, scroll restoration
+│   ├── motion/
+│   │   ├── core.js          Durations/easings, split-text, reveal helpers, scrollTo
+│   │   ├── hero.js          Intro + the pinned, scroll-scrubbed hero film
+│   │   ├── sections.js      Per-section scroll choreography (gsap.matchMedia)
+│   │   ├── ambient.js       Magnetic buttons, card tilt (fine pointers only)
+│   │   └── lenis.js         Smooth wheel scrolling wired into ScrollTrigger
+│   ├── data/                Content (services, team, nav, contact) and the SVG icon sprite
+│   └── styles/main.css      Design tokens and all styles
+└── docs/                    Build output (published)
+```
+
+### How the motion is split
+
+- **React** owns markup and UI state: the mobile menu, forms, booking stepper, header/back-to-top state, hero slide counter.
+- **GSAP + ScrollTrigger** owns everything scroll-driven. The motion layer is imperative by design: it is started in `useLayoutEffect`, scoped with `gsap.matchMedia()` / `gsap.context()`, and returns a cleanup that reverts every tween, trigger and pin (no duplicates in StrictMode or on resize).
+- **Lenis** only smooths mouse-wheel scrolling; touch scrolling stays native.
+- **Framer Motion** (`LazyMotion`) animates React UI: the mobile menu and the back-to-top button.
+- **CSS** handles hover, focus and button micro-interactions (hover lifts use the `translate` property so they never fight GSAP's transforms).
+- Text that the motion layer splits into words/letters (hero headline, footer wordmark) is wrapped in `memo` so React never re-renders it.
+- With `prefers-reduced-motion: reduce` there is no Lenis, pinning, parallax or entrance animation: everything is simply visible.
+
+### Hero film
+
+On desktop (width ≥ 1024px, height ≥ 640px) the hero pins for about 1.6 screens and plays a scroll-scrubbed film: the image card expands to a full-bleed photo, two chapter captions land in big type over an outlined wordmark, a circular iris opens onto the second photo, and the booking CTA arrives before the About section slides over like a curtain. Elsewhere it does not pin.
 
 ## Known placeholders
 
-- There is no backend. The booking form and the contact form validate and then open the visitor's email app with the details pre-filled (a `mailto:` hand-off to `info@example.com`); they never show a fake success message. The newsletter form is inert until a service is connected.
+- There is no backend. The booking and contact forms validate and then open the visitor's email app with the details pre-filled (a `mailto:` hand-off to `info@example.com`); they never show a fake success message. The newsletter form is inert until a service is connected.
 - Names, address, phone number, email, opening hours and body text are placeholder content (all five dentists are still "Dr. John Doe, Implant Surgeon"). The social links are `#` placeholders and "Latest Blog" has no page yet.
-- The map on the Contact page is an embedded Google Map pointing at New York.
-- The "Appointment" buttons now scroll to the booking section on the same page.
+- The map on the Contact section is an embedded Google Map pointing at New York.
+- Only the Google Maps embed loads from a public CDN; fonts and scripts are self-hosted.
