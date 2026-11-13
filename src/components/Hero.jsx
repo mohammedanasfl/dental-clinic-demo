@@ -53,10 +53,10 @@ export function Hero() {
       {/* Desktop story stage: a full-bleed copy of the slides that starts as the image "window" and expands on scroll */}
       <div className="hero__stage" data-hero-stage aria-hidden="true">
         <div className="hero__sslide hero__sslide--1"><div className="hero__sshift">
-          <img src={img('stage-1-1408.webp')} srcSet={`${img('stage-1-960.webp')} 960w, ${img('stage-1-1408.webp')} 1408w, ${img('stage-1-2112.webp')} 2112w`} sizes="100vw" width="1408" height="768" alt="" decoding="async" />
+          <img src={img('stage-1-1672.webp')} srcSet={`${img('stage-1-960.webp')} 960w, ${img('stage-1-1672.webp')} 1672w, ${img('stage-1-2508.webp')} 2508w`} sizes="100vw" width="1672" height="941" alt="" decoding="async" />
         </div></div>
         <div className="hero__sslide hero__sslide--2" data-stage-slide2><div className="hero__sshift">
-          <img src={img('stage-2-1920.webp')} srcSet={`${img('stage-2-1280.webp')} 1280w, ${img('stage-2-1920.webp')} 1920w`} sizes="100vw" width="1920" height="1080" alt="" loading="lazy" decoding="async" />
+          <img src={img('stage-2-1672.webp')} srcSet={`${img('stage-2-960.webp')} 960w, ${img('stage-2-1672.webp')} 1672w, ${img('stage-2-2508.webp')} 2508w`} sizes="100vw" width="1672" height="941" alt="" loading="lazy" decoding="async" />
         </div></div>
         <div className="hero__veil" />
         <div className="hero__spot" />
@@ -95,10 +95,10 @@ export function Hero() {
           <div className="hero__visual">
             <div className="hero__media" data-hero-media data-hero-window>
               <div className="hero__slide hero__slide--1">
-                <img src={img('hero-1-614.webp')} srcSet={`${img('hero-1-480.webp')} 480w, ${img('hero-1-614.webp')} 614w`} sizes="(min-width: 1024px) 480px, 448px" width="614" height="768" alt="A dentist treating a patient in a bright, modern dental operatory" fetchpriority="high" decoding="async" />
+                <img src={img('hero-1-753.webp')} srcSet={`${img('hero-1-480.webp')} 480w, ${img('hero-1-753.webp')} 753w, ${img('hero-1-1130.webp')} 1130w`} sizes="(min-width: 1024px) 480px, 448px" width="753" height="941" alt="A smiling dentist treating a relaxed patient in a bright, modern dental operatory" fetchpriority="high" decoding="async" />
               </div>
               <div className="hero__slide hero__slide--2" id="hero-slide2">
-                <img src={img('hero-2-720.webp')} srcSet={`${img('hero-2-480.webp')} 480w, ${img('hero-2-720.webp')} 720w, ${img('hero-2-864.webp')} 864w`} sizes="(min-width: 1024px) 480px, 448px" width="864" height="1080" alt="Dental professionals carrying out a treatment" decoding="async" />
+                <img src={img('hero-2-753.webp')} srcSet={`${img('hero-2-480.webp')} 480w, ${img('hero-2-753.webp')} 753w, ${img('hero-2-1130.webp')} 1130w`} sizes="(min-width: 1024px) 480px, 448px" width="753" height="941" alt="A dentist chatting with a patient during a friendly consultation" decoding="async" />
               </div>
             </div>
             <div className="glass glass--a" data-hero-glass="a">
