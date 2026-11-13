@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { headerH, scrollTo } from '../motion/core.js';
-import { savedScroll } from './useScrollRestoration.js';
+import { savedScroll } from '../utils/scrollMemory.js';
 
 function goTo(target, hash, immediate) {
   if (hash === '#hero') scrollTo(0, { immediate });

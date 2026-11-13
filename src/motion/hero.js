@@ -17,13 +17,13 @@
  * React owns the markup and the slide counter (via `onIndex`); this module owns the motion.
  * Returns a cleanup function that reverts every tween, trigger, pin and listener.
  */
+import { savedScroll } from '../utils/scrollMemory.js';
 import { gsap, ScrollTrigger, dur, ease, stagger, headerH, prefersReduced, scrollTo, splitWords } from './core.js';
 
 const root = () => document.documentElement;
 const STAGE_MQ = '(min-width: 1024px) and (min-height: 640px) and (prefers-reduced-motion: no-preference)';
 const CARD_HIDDEN = 'inset(100% 0% 0% 0%)', CARD_SHOWN = 'inset(0% 0% 0% 0%)';
 const IRIS_HIDDEN = 'circle(0% at 50% 72%)', IRIS_SHOWN = 'circle(150% at 50% 72%)';
-const FULL = 'inset(0px 0px 0px 0px round 0px)';
 
 export function initHero({ onIndex }) {
   const q = (s) => document.querySelector(s);
@@ -81,7 +81,7 @@ export function initHero({ onIndex }) {
      * Text first: the headline starts rising right away (fonts are self-hosted + preloaded),
      * everything is on screen in ~1.5s, and a watchdog snaps it to the end state on slow
      * devices so the hero can never sit half-drawn. */
-    const playIntro = () => {
+    const playIntro = (instant) => {
       if (cancelled) return;
       const staged = html.classList.contains('hero-stage');
       const header = q('#site-header');
@@ -107,17 +107,20 @@ export function initHero({ onIndex }) {
         tl.fromTo(media, { opacity: 1, clipPath: 'inset(10% 10% 10% 10% round 28px)' }, { clipPath: 'inset(0% 0% 0% 0% round 16px)', duration: 1.2, ease: 'power4.inOut', clearProps: 'clipPath' }, 0)
           .fromTo(slide1, { scale: 1.25 }, { scale: 1, duration: 1.6, ease: 'power3.out' }, 0);
       }
+      if (instant) { tl.progress(1); return; } // arrived scrolled (hash / restored position): no intro, just the rest state
       // watchdog: never leave the hero half-drawn on a slow device
       watchdog = window.setTimeout(() => { if (tl.progress() < 1) tl.progress(1); }, 3200);
     };
 
-    if (motionOn) {
+    if (motionOn && (savedScroll() > 0 || window.location.hash.length > 1)) {
+      playIntro(true);
+    } else if (motionOn) {
       // Wait only briefly (max ~0.5s) for the font + hero image, then go.
       const heroImg = window.matchMedia(STAGE_MQ).matches ? sImg1 : img1;
       const imgReady = heroImg.decode ? heroImg.decode().catch(() => {}) : Promise.resolve();
       const fontsReady = document.fonts && document.fonts.load ? document.fonts.load('600 56px Outfit') : Promise.resolve();
       const timeout = new Promise((r) => setTimeout(r, 500));
-      Promise.race([Promise.all([imgReady, fontsReady]), timeout]).then(playIntro);
+      Promise.race([Promise.all([imgReady, fontsReady]), timeout]).then(() => playIntro(false));
     } else {
       gsap.set(words, { yPercent: 0 });
     }
@@ -164,7 +167,22 @@ export function initHero({ onIndex }) {
     gsap.set(w1.concat(w2), { yPercent: 112 });
     const rest = [copy.querySelector('.pill'), copy.querySelector('.hero__sub'), copy.querySelector('.hero__cta'), copy.querySelector('.hero__meta')];
 
+    // The card → full-bleed expansion depends on layout, so it is computed from a cached measurement
+    // (refreshed on ScrollTrigger refresh) rather than recorded by a tween.
+    let win = null;
+    const measure = () => {
+      const h = hero.getBoundingClientRect(), m = media.getBoundingClientRect();
+      win = { t: m.top - h.top, r: h.right - m.right, b: h.bottom - m.bottom, l: m.left - h.left };
+    };
+    const clipEase = gsap.parseEase('power2.inOut');
+    const updateClip = () => {
+      if (!win) measure();
+      const k = 1 - clipEase(gsap.utils.clamp(0, 1, (tl.progress() - 0.02) / 0.34));
+      stage.style.clipPath = `inset(${(win.t * k).toFixed(1)}px ${(win.r * k).toFixed(1)}px ${(win.b * k).toFixed(1)}px ${(win.l * k).toFixed(1)}px round ${(16 * k).toFixed(1)}px)`;
+    };
+
     const tl = gsap.timeline({
+      onUpdate: updateClip,
       defaults: { ease: 'none' },
       scrollTrigger: {
         trigger: hero,
@@ -173,7 +191,8 @@ export function initHero({ onIndex }) {
         pin: true,
         scrub: 0.7,
         anticipatePin: 1,
-        invalidateOnRefresh: true,
+        // NB: no invalidateOnRefresh — it would re-read the *current* DOM (mid-intro / scrolled) as the
+        // timeline's start values. Layout-dependent values are measured explicitly instead (see updateClip).
         onUpdate: (self) => {
           setIdx(self.progress >= 0.6 ? 1 : 0);
           // once the copy has faded out, take it out of the tab order too
@@ -194,7 +213,6 @@ export function initHero({ onIndex }) {
       .fromTo(glassA, { x: 0, y: 0, opacity: 1 }, { x: -140, y: 80, opacity: 0, duration: 0.2, ...NR }, 0)
       .fromTo(glassB, { x: 0, y: 0, opacity: 1 }, { x: 140, y: -60, opacity: 0, duration: 0.2, ...NR }, 0)
       .fromTo([blobA, blobB], { opacity: 1 }, { opacity: 0, duration: 0.15, ...NR }, 0)
-      .fromTo(stage, { clipPath: () => windowRect() }, { clipPath: FULL, ease: 'power2.inOut', duration: 0.34, immediateRender: false }, 0.02)
       .to(sImg1, { scale: 1.18, duration: 1 }, 0)
       .to(veil, { opacity: 1, duration: 0.3 }, 0.1)
       .to(spot, { opacity: 1, duration: 0.2 }, 0.3)
@@ -232,7 +250,11 @@ export function initHero({ onIndex }) {
     if (hover) { hero.addEventListener('pointermove', onMove); gsap.ticker.add(drift); }
 
     // keep the window glued to the card if layout shifts while still at rest
-    const onRefresh = () => { if (tl.scrollTrigger && tl.scrollTrigger.progress === 0) gsap.set(stage, { clipPath: windowRect() }); };
+    const onRefresh = () => {
+      measure();
+      if (tl.progress() > 0) updateClip(); // mid-film: re-apply with the fresh measurement
+      else if (!introTl || !introTl.isActive()) gsap.set(stage, { clipPath: windowRect() });
+    };
     ScrollTrigger.addEventListener('refresh', onRefresh);
 
     return () => {
