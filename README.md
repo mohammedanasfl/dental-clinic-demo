@@ -35,7 +35,6 @@ The site lives under `/dental-clinic-demo/`, which is set as Vite's `base`. For 
 ├── public/                  Copied as-is into docs/
 │   ├── assets/fonts/        Outfit + Plus Jakarta Sans variable fonts (latin, preloaded)
 │   ├── assets/img/          Optimised WebP images
-│   ├── about|service|team|contact.html   Redirect stubs from the old multi-page site
 │   └── .nojekyll
 ├── src/
 │   ├── main.jsx · App.jsx   Entry and app shell (menu state, motion layer lifecycle)
