@@ -12,6 +12,16 @@
   <script>
     (function () {
       var d = document.documentElement;
+      // Arriving on a #hash (or reloading mid-page): hide the page until the app has placed it at the right
+      // position, so the top of the hero never flashes first. The app removes the class; this timer is the safety net.
+      try {
+        var nav = performance.getEntriesByType('navigation')[0];
+        var back = nav && (nav.type === 'reload' || nav.type === 'back_forward') && parseFloat(sessionStorage.getItem('dentcare:scrollY') || '0') > 0;
+        if (location.hash.length > 1 || back) {
+          d.classList.add('entering');
+          window.setTimeout(function () { d.classList.remove('entering'); }, 4000);
+        }
+      } catch (e) { /* storage or timing API unavailable: nothing to hide */ }
       if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         d.classList.add('motion');
         // safety net: if the animation scripts never report ready, show everything
@@ -24,10 +34,10 @@
   <link rel="preload" as="font" type="font/woff2" href="/dental-clinic-demo/assets/fonts/jakarta-latin.woff2" crossorigin>
   <link rel="preload" as="image" type="image/webp" media="(min-width: 1024px)" href="/dental-clinic-demo/assets/img/stage-1-1672.webp" imagesrcset="/dental-clinic-demo/assets/img/stage-1-960.webp 960w, /dental-clinic-demo/assets/img/stage-1-1672.webp 1672w, /dental-clinic-demo/assets/img/stage-1-2508.webp 2508w" imagesizes="100vw" fetchpriority="high">
   <link rel="preload" as="image" type="image/webp" media="(max-width: 1023px)" href="/dental-clinic-demo/assets/img/hero-1-753.webp" imagesrcset="/dental-clinic-demo/assets/img/hero-1-480.webp 480w, /dental-clinic-demo/assets/img/hero-1-753.webp 753w, /dental-clinic-demo/assets/img/hero-1-1130.webp 1130w" imagesizes="448px" fetchpriority="high">
-  <script type="module" crossorigin src="/dental-clinic-demo/assets/index-ByYLaVsR.js"></script>
+  <script type="module" crossorigin src="/dental-clinic-demo/assets/index-CZwAPyNe.js"></script>
   <link rel="modulepreload" crossorigin href="/dental-clinic-demo/assets/motion-CUl5MWjM.js">
   <link rel="modulepreload" crossorigin href="/dental-clinic-demo/assets/react-BlJGT3uA.js">
-  <link rel="stylesheet" crossorigin href="/dental-clinic-demo/assets/index-MHmVKv7a.css">
+  <link rel="stylesheet" crossorigin href="/dental-clinic-demo/assets/index-C96nu97f.css">
 </head>
 <body>
   <div id="root"></div>

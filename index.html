@@ -12,6 +12,16 @@
   <script>
     (function () {
       var d = document.documentElement;
+      // Arriving on a #hash (or reloading mid-page): hide the page until the app has placed it at the right
+      // position, so the top of the hero never flashes first. The app removes the class; this timer is the safety net.
+      try {
+        var nav = performance.getEntriesByType('navigation')[0];
+        var back = nav && (nav.type === 'reload' || nav.type === 'back_forward') && parseFloat(sessionStorage.getItem('dentcare:scrollY') || '0') > 0;
+        if (location.hash.length > 1 || back) {
+          d.classList.add('entering');
+          window.setTimeout(function () { d.classList.remove('entering'); }, 4000);
+        }
+      } catch (e) { /* storage or timing API unavailable: nothing to hide */ }
       if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         d.classList.add('motion');
         // safety net: if the animation scripts never report ready, show everything

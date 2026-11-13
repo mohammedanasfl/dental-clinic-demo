@@ -484,7 +484,7 @@ html.hero-stage .hero__slide { visibility: hidden; }
 html.hero-stage .hero__media { background: transparent; }
 html.hero-stage .hero__media::after { display: none; }
 
-.hero__stage { position: absolute; inset: 0; z-index: 1; overflow: hidden; background: var(--primary-container); }
+.hero__stage { position: absolute; inset: 0; z-index: 1; overflow: hidden; background: #dbe8f1; }
 .hero__sslide { position: absolute; inset: 0; overflow: hidden; }
 .hero__sslide--2 { clip-path: circle(0% at 50% 72%); }
 .hero__sshift { position: absolute; inset: 0; }
@@ -543,3 +543,7 @@ html.hero-stage .hero__cue { display: flex; }
 .hero__cue i { width: 1px; height: 2.75rem; background: linear-gradient(to bottom, var(--secondary), transparent); transform-origin: top; animation: cue 2s var(--ease-out) infinite; }
 @keyframes cue { 0% { transform: scaleY(0); opacity: 1; } 55% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .hero__cue { display: none !important; } }
+
+/* Arriving on a #hash / restored position: keep the page hidden until it has been placed, so the visitor never sees the top first */
+#root { transition: opacity 0.45s ease; }
+html.entering #root { opacity: 0; transition: none; }

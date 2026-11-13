@@ -83,7 +83,8 @@ export function initHero({ onIndex }) {
      * devices so the hero can never sit half-drawn. */
     const playIntro = (instant) => {
       if (cancelled) return;
-      const staged = html.classList.contains('hero-stage');
+      // NB: not html.classList — on the instant (hash / restore) path this runs before the matchMedia block below adds it
+      const staged = window.matchMedia(STAGE_MQ).matches;
       const header = q('#site-header');
       const tl = gsap.timeline({ defaults: { ease: ease.out } });
       introTl = tl;
