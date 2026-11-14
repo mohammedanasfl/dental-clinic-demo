@@ -1,7 +1,7 @@
 import { memo, useLayoutEffect, useState } from 'react';
 import { Icon } from './Icon.jsx';
 import { initHero } from '../motion/hero.js';
-import { img } from '../utils/assets.js';
+import { img, video } from '../utils/assets.js';
 
 /** The counter + arrows appear twice: in the copy (at rest) and in the HUD (full-bleed film). */
 function Counter({ idx, hud }) {
@@ -52,12 +52,15 @@ export function Hero() {
     <section className="hero" id="hero" aria-labelledby="hero-title">
       {/* Desktop story stage: a full-bleed copy of the slides that starts as the image "window" and expands on scroll */}
       <div className="hero__stage" data-hero-stage aria-hidden="true">
-        <div className="hero__sslide hero__sslide--1"><div className="hero__sshift">
+        <div className="hero__sslide hero__sslide--1"><div className="hero__sshift"><div className="hero__smedia">
           <img src={img('stage-1-1672.webp')} srcSet={`${img('stage-1-960.webp')} 960w, ${img('stage-1-1672.webp')} 1672w, ${img('stage-1-2508.webp')} 2508w`} sizes="100vw" width="1672" height="941" alt="" decoding="async" />
-        </div></div>
-        <div className="hero__sslide hero__sslide--2" data-stage-slide2><div className="hero__sshift">
+          {/* Loaded + played by the motion layer on desktop only; the photograph above is the poster / fallback */}
+          <video data-stage-video="1" data-src={video('hero-1.mp4')} muted playsInline preload="none" tabIndex={-1} disablePictureInPicture disableRemotePlayback />
+        </div></div></div>
+        <div className="hero__sslide hero__sslide--2" data-stage-slide2><div className="hero__sshift"><div className="hero__smedia">
           <img src={img('stage-2-1672.webp')} srcSet={`${img('stage-2-960.webp')} 960w, ${img('stage-2-1672.webp')} 1672w, ${img('stage-2-2508.webp')} 2508w`} sizes="100vw" width="1672" height="941" alt="" loading="lazy" decoding="async" />
-        </div></div>
+          <video data-stage-video="2" data-src={video('hero-2.mp4')} muted playsInline preload="none" tabIndex={-1} disablePictureInPicture disableRemotePlayback />
+        </div></div></div>
         <div className="hero__veil" />
         <div className="hero__spot" />
       </div>

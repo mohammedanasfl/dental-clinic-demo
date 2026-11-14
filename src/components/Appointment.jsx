@@ -2,13 +2,16 @@ import { Fragment, useState } from 'react';
 import { Icon } from './Icon.jsx';
 import { CONTACT, BOOKING_SERVICES, BOOKING_DOCTORS } from '../data/content.js';
 import { openMail, handoffMessage } from '../utils/mailto.js';
+import { canSubmitOnline, sendForm } from '../utils/formSubmit.js';
 
 const STEPS = ['Service', 'Time', 'Confirm'];
+const EMPTY = { service: BOOKING_SERVICES[0], doctor: BOOKING_DOCTORS[0], name: '', phone: '', date: '' };
 
 export function Appointment() {
-  const [v, setV] = useState({ service: BOOKING_SERVICES[0], doctor: BOOKING_DOCTORS[0], name: '', phone: '', date: '' });
+  const [v, setV] = useState(EMPTY);
   const [touched, setTouched] = useState(false);
   const [status, setStatus] = useState('');
+  const [state, setState] = useState('idle'); // idle | sending | sent | error
 
   const set = (e) => { setTouched(true); setV((s) => ({ ...s, [e.target.name]: e.target.value })); };
 
@@ -17,13 +20,32 @@ export function Appointment() {
   const current = touched ? ok.indexOf(false) : 0; // -1 once everything is filled in
   const isDone = (i) => touched && (current === -1 || i < current);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    if (!e.currentTarget.checkValidity()) { e.currentTarget.reportValidity(); setStatus(''); return; }
-    setStatus(handoffMessage());
-    openMail(`Appointment request: ${v.service}`, [
-      `Service: ${v.service}`, `Preferred doctor: ${v.doctor}`, `Name: ${v.name.trim()}`, `Phone: ${v.phone.trim()}`, `Preferred date: ${v.date}`,
-    ]);
+    const form = e.currentTarget;
+    if (!form.checkValidity()) { form.reportValidity(); setStatus(''); setState('idle'); return; }
+    const fields = { Service: v.service, 'Preferred doctor': v.doctor, Name: v.name.trim(), Phone: v.phone.trim(), 'Preferred date': v.date };
+    const subject = `Appointment request: ${v.service}`;
+
+    if (!canSubmitOnline()) { // no mail service configured: hand over to the visitor's mail app (never a fake success)
+      setState('idle');
+      setStatus(handoffMessage());
+      openMail(subject, Object.entries(fields).map(([k, val]) => `${k}: ${val}`));
+      return;
+    }
+
+    setState('sending');
+    setStatus('Sending your request…');
+    const res = await sendForm(subject, fields, form.elements.botcheck ? (form.elements.botcheck.checked ? 'on' : '') : '');
+    if (res.ok) {
+      setState('sent');
+      setStatus(`Thank you. Your appointment request has been sent. We will contact you on ${fields.Phone} to confirm.`);
+      setV(EMPTY);
+      setTouched(false);
+    } else {
+      setState('error');
+      setStatus(`Sorry, we could not send your request. Please try again, or call ${CONTACT.phone}.`);
+    }
   };
 
   return (
@@ -59,6 +81,8 @@ export function Appointment() {
                 ))}
               </div>
               <form className="form" id="appointment-form" noValidate onSubmit={submit}>
+                {/* spam trap: hidden from people, bots tend to tick it */}
+                <input type="checkbox" name="botcheck" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ display: 'none' }} />
                 <div className="form-row">
                   <label className="field"><span>Service Required</span>
                     <select name="service" value={v.service} onChange={set} required>{BOOKING_SERVICES.map((o) => <option key={o}>{o}</option>)}</select></label>
@@ -70,8 +94,8 @@ export function Appointment() {
                   <label className="field"><span>Phone Number</span><input type="tel" name="phone" value={v.phone} onChange={set} placeholder="+1 (555) 000-0000" autoComplete="tel" required /></label>
                 </div>
                 <label className="field"><span>Preferred Appointment Date</span><input type="date" name="date" value={v.date} onChange={set} required /></label>
-                <button className="btn btn--blue btn--block btn--md" type="submit"><span>Book Instant Consultation</span><Icon name="circle-check" /></button>
-                <p className="form-status" role="status" aria-live="polite">{status}</p>
+                <button className="btn btn--blue btn--block btn--md" type="submit" disabled={state === 'sending'} aria-busy={state === 'sending'}><span>{state === 'sending' ? 'Sending…' : 'Book Instant Consultation'}</span><Icon name="circle-check" /></button>
+                <p className={`form-status${state === 'error' ? ' is-error' : ''}${state === 'sent' ? ' is-sent' : ''}`} role="status" aria-live="polite">{status}</p>
                 <div className="form-note"><Icon name="lock" /><span>Your details are only used to arrange your appointment</span></div>
               </form>
             </div>

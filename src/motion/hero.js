@@ -42,7 +42,9 @@ export function initHero({ onIndex }) {
   const blobA = q('[data-hero-blob="a"]'), blobB = q('[data-hero-blob="b"]');
   const stage = q('[data-hero-stage]');
   const sSlide1 = q('.hero__sslide--1'), sSlide2 = q('[data-stage-slide2]');
-  const sImg1 = sSlide1.querySelector('img'), sImg2 = sSlide2.querySelector('img');
+  // sImg* are the media wrappers (photo + clip together), so scale / parallax apply to both
+  const sImg1 = sSlide1.querySelector('.hero__smedia'), sImg2 = sSlide2.querySelector('.hero__smedia');
+  const vid1 = q('[data-stage-video="1"]'), vid2 = q('[data-stage-video="2"]');
   const veil = q('.hero__veil'), marquee = q('[data-hero-marquee]'), marqueeText = marquee.firstElementChild;
   const spot = q('.hero__spot');
   const capsEl = q('.hero__caps');
@@ -110,7 +112,7 @@ export function initHero({ onIndex }) {
       playIntro(true);
     } else if (motionOn) {
       // Wait only briefly (max ~0.5s) for the font + hero image, then go.
-      const heroImg = window.matchMedia(STAGE_MQ).matches ? sImg1 : img1;
+      const heroImg = window.matchMedia(STAGE_MQ).matches ? sSlide1.querySelector('img') : img1;
       const imgReady = heroImg.decode ? heroImg.decode().catch(() => {}) : Promise.resolve();
       const fontsReady = document.fonts && document.fonts.load ? document.fonts.load('600 56px Outfit') : Promise.resolve();
       const timeout = new Promise((r) => setTimeout(r, 500));
@@ -163,6 +165,56 @@ export function initHero({ onIndex }) {
     // headroom so the pointer parallax never exposes the photograph's edge
     gsap.set(sImg1, { scale: 1.06 });
 
+    /* ---------- hero clips ----------
+     * Two short generated clips play over their poster photographs. Each plays once and holds its last
+     * frame (they are not loop-clean). Clip 1 plays while the hero is in view and replays on return to
+     * the top; clip 2 starts when the iris opens. Never fetched on mobile / reduced motion / Save-Data. */
+    const saveData = !!(navigator.connection && navigator.connection.saveData);
+    const clips = saveData ? [] : [vid1, vid2].filter(Boolean);
+    const clipCleanups = [];
+    const loadClip = (v) => {
+      if (v.getAttribute('src')) return;
+      v.muted = true; v.defaultMuted = true;
+      const onPlaying = () => v.classList.add('is-playing');
+      v.addEventListener('playing', onPlaying);
+      clipCleanups.push(() => v.removeEventListener('playing', onPlaying));
+      v.src = v.dataset.src;
+      v.load();
+    };
+    const tryPlay = (v) => { const r = v.play(); if (r && r.catch) r.catch(() => {}); };
+    let heroVisible = true;
+    if (clips.length) {
+      const start = () => {
+        if (cancelled) return;
+        loadClip(vid1);
+        if (heroVisible) tryPlay(vid1);
+        // clip 2 only after clip 1 has had the bandwidth
+        const t = window.setTimeout(() => { if (!cancelled) loadClip(vid2); }, 1500);
+        clipCleanups.push(() => window.clearTimeout(t));
+      };
+      if (document.readyState === 'complete') start();
+      else { window.addEventListener('load', start, { once: true }); clipCleanups.push(() => window.removeEventListener('load', start)); }
+      // pause while the hero is off screen (battery), resume where it left off
+      const io = new IntersectionObserver((entries) => {
+        heroVisible = entries[entries.length - 1].isIntersecting;
+        clips.forEach((v) => {
+          if (!v.getAttribute('src')) return;
+          if (!heroVisible) v.pause();
+          else if (!v.ended && (v === vid1 || tl.progress() >= 0.5)) tryPlay(v);
+        });
+      });
+      io.observe(hero);
+      clipCleanups.push(() => io.disconnect());
+    }
+    const onFilm = (p) => {
+      if (!clips.length) return;
+      if (vid1 && vid1.getAttribute('src') && p < 0.02 && vid1.ended) { vid1.currentTime = 0; tryPlay(vid1); }
+      if (vid2 && vid2.getAttribute('src')) {
+        if (p >= 0.5 && vid2.paused && !vid2.ended && heroVisible) tryPlay(vid2);
+        else if (p < 0.4 && (vid2.currentTime > 0 || vid2.ended)) { vid2.pause(); vid2.currentTime = 0; } // ready for the next iris
+      }
+    };
+
     const tl = gsap.timeline({
       defaults: { ease: 'none' },
       scrollTrigger: {
@@ -176,6 +228,7 @@ export function initHero({ onIndex }) {
         // timeline's start values; every tween below states its start values explicitly instead.
         onUpdate: (self) => {
           setIdx(self.progress >= 0.6 ? 1 : 0);
+          onFilm(self.progress);
           // once the copy has faded out, take it out of the tab order too
           copy.style.visibility = self.progress > 0.2 ? 'hidden' : '';
           capsEl.style.visibility = self.progress > 0.22 ? 'visible' : '';
@@ -230,6 +283,8 @@ export function initHero({ onIndex }) {
     if (hover) { hero.addEventListener('pointermove', onMove); gsap.ticker.add(drift); }
 
     return () => {
+      clipCleanups.forEach((fn) => fn());
+      clips.forEach((v) => { v.pause(); });
       hero.removeEventListener('pointermove', onMove); gsap.ticker.remove(drift);
       [glassA, glassB, sImg1].forEach((el) => { el.style.translate = ''; });
       html.classList.remove('hero-stage');

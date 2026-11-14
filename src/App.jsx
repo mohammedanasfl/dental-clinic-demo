@@ -5,6 +5,7 @@ import { Header } from './components/Header.jsx';
 import { MobileMenu } from './components/MobileMenu.jsx';
 import { Hero } from './components/Hero.jsx';
 import { About } from './components/About.jsx';
+import { Scan } from './components/Scan.jsx';
 import { Services, Marquee } from './components/Services.jsx';
 import { Appointment } from './components/Appointment.jsx';
 import { Dentists } from './components/Dentists.jsx';
@@ -20,6 +21,7 @@ import { useScrollRestoration } from './hooks/useScrollRestoration.js';
 import { ScrollTrigger, getLenis } from './motion/core.js';
 import { startSmoothScroll } from './motion/lenis.js';
 import { initSections } from './motion/sections.js';
+import { initScan } from './motion/scan.js';
 import { initMagnetic, initTilt } from './motion/ambient.js';
 
 export default function App() {
@@ -42,6 +44,8 @@ export default function App() {
   // pinned trigger is registered before any section trigger — pin spacing is measured in order.
   useLayoutEffect(() => {
     const stopScroll = startSmoothScroll();
+    // the precision pin is registered before the sections below it so their pin-spacing is measured in order
+    const stopScan = initScan();
     const stopSections = initSections();
     const stopMagnetic = initMagnetic();
     const stopTilt = initTilt();
@@ -54,7 +58,7 @@ export default function App() {
     window.__dcReady = true; // tells index.html's safety net the motion layer booted
     return () => {
       window.removeEventListener('load', refresh);
-      stopTilt(); stopMagnetic(); stopSections(); stopScroll();
+      stopTilt(); stopMagnetic(); stopSections(); stopScan(); stopScroll();
     };
   }, []);
 
@@ -83,6 +87,7 @@ export default function App() {
       <main id="main">
         <Hero />
         <About />
+        <Scan />
         <Services />
         <Marquee />
         <Appointment />

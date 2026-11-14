@@ -342,6 +342,9 @@ html.lenis, html.lenis body { height: auto; }
 .form-note { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding-top: 0.5rem; font-size: 0.6875rem; letter-spacing: 0.02em; color: var(--on-surface-variant); }
 .form-note .ic { width: 1rem; height: 1rem; color: var(--secondary); }
 .form-status { min-height: 1.25rem; font-size: 0.8125rem; line-height: 1.25rem; color: var(--secondary); font-weight: 500; text-align: center; }
+.form-status.is-error { color: #b3261e; }
+.form-status.is-sent { color: #0b7a4b; font-weight: 600; }
+.booking .btn[disabled] { opacity: 0.7; cursor: progress; }
 .btn--block { width: 100%; }
 .btn .ic { width: 1.1rem; height: 1.1rem; }
 
@@ -507,9 +510,13 @@ html.hero-stage .hero__tagline { color: rgba(255, 255, 255, 0.7); }
 .hero__sslide { position: absolute; inset: 0; overflow: hidden; }
 .hero__sslide--2 { clip-path: circle(0% at 50% 72%); }
 .hero__sshift { position: absolute; inset: 0; }
-.hero__sshift img { width: 100%; height: 100%; object-fit: cover; }
-.hero__sslide--1 img { object-position: 50% 50%; }
-.hero__sslide--2 img { object-position: 50% 38%; }
+.hero__smedia { position: absolute; inset: 0; }
+.hero__smedia img, .hero__smedia video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hero__sslide--1 .hero__smedia > * { object-position: 50% 50%; }
+.hero__sslide--2 .hero__smedia > * { object-position: 50% 38%; }
+/* the clip fades in over its own poster photograph once it is actually playing (first frame ≈ the photo) */
+.hero__smedia video { opacity: 0; transition: opacity 0.6s ease; pointer-events: none; }
+.hero__smedia video.is-playing { opacity: 1; }
 .hero__veil { position: absolute; inset: 0; opacity: 0; background: linear-gradient(90deg, rgba(0, 5, 21, 0.74), rgba(0, 5, 21, 0.28) 62%, rgba(0, 5, 21, 0.12)), linear-gradient(to top, rgba(0, 5, 21, 0.55), transparent 42%); }
 /* base scrim: keeps the white headline legible over the bright photograph before the film starts */
 .hero__stage::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, rgba(5, 18, 40, 0.68) 0%, rgba(5, 18, 40, 0.42) 42%, rgba(5, 18, 40, 0.06) 78%), linear-gradient(to top, rgba(5, 18, 40, 0.4), transparent 38%); }
@@ -568,3 +575,20 @@ html.hero-stage .hero__cue { display: flex; }
 /* Arriving on a #hash / restored position: keep the page hidden until it has been placed, so the visitor never sees the top first */
 #root { transition: opacity 0.45s ease; }
 html.entering #root { opacity: 0; transition: none; }
+
+/* ---------- precision: scroll-scrubbed scanner (frames on a canvas) ---------- */
+.scan { position: relative; z-index: 2; background: #fff; padding: 2.5rem 0 2rem; }
+@media (min-width: 1024px) { .scan { padding: 3rem 0 2rem; } }
+.scan__inner { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem; text-align: center; min-height: calc(100svh - var(--header-h) - 5rem); }
+.scan__head h2 { margin-top: 0.75rem; }
+.scan__head .lead { max-width: 40rem; margin: 0.75rem auto 0; font-size: 1rem; line-height: 1.6rem; }
+/* the stage keeps the frame's 16:9 shape and never exceeds the pinned viewport, so marker percentages stay on their parts */
+.scan__stage { position: relative; width: min(100%, max(20rem, calc((100svh - var(--header-h) - 18rem) * 16 / 9))); aspect-ratio: 16 / 9; }
+.scan__poster, .scan__canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.scan__marker { position: absolute; translate: -50% -50%; display: grid; place-items: center; width: 1.625rem; height: 1.625rem; border-radius: 50%; background: var(--primary); color: #fff; border: 2px solid #fff; font: 700 0.6875rem/1 var(--font-head); box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.28), 0 6px 14px rgba(9, 30, 62, 0.3); pointer-events: none; }
+@media (max-width: 639px) { .scan__marker { width: 1.125rem; height: 1.125rem; font-size: 0.5625rem; border-width: 1.5px; box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.28), 0 4px 10px rgba(9, 30, 62, 0.3); } }
+.scan__legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 1.5rem; width: 100%; max-width: 62rem; }
+@media (min-width: 640px) { .scan__legend { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .scan__legend { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.5rem 1rem; } }
+.scan__legend li { display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.8125rem; font-weight: 500; color: var(--on-surface-variant); }
+.scan__legend b { display: grid; place-items: center; flex: none; width: 1.375rem; height: 1.375rem; border-radius: 50%; background: var(--primary); color: #fff; font: 700 0.625rem/1 var(--font-head); }
