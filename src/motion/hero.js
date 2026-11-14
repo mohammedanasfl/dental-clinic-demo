@@ -1,11 +1,11 @@
 /* Hero — cinematic intro + a pinned, scroll-driven film.
  *
  * Desktop (>=1024px wide, >=640px tall, motion allowed):
- *   The 4:5 image card is really a "window" onto a full-bleed stage. While the
- *   hero is pinned (~1.6 screens of scrolling) the story plays out, scrubbed by
- *   the scrollbar:
- *     1. the copy lifts away (words slide out of their masks) and the window
- *        expands into a full-bleed, slowly pushing photograph;
+ *   The hero opens as a full-bleed photograph (the "stage") with the headline over it.
+ *   While the hero is pinned (~1.6 screens of scrolling) the story plays out,
+ *   scrubbed by the scrollbar:
+ *     1. the copy lifts away (words slide out of their masks) while the
+ *        photograph slowly pushes in;
  *     2. chapter one lands in big type, an outlined wordmark drifts across;
  *     3. a circular iris opens onto the second photograph, chapter two lands;
  *     4. the booking call-to-action arrives, then the pin releases and the
@@ -18,11 +18,12 @@
  * Returns a cleanup function that reverts every tween, trigger, pin and listener.
  */
 import { savedScroll } from '../utils/scrollMemory.js';
-import { gsap, ScrollTrigger, dur, ease, stagger, headerH, prefersReduced, scrollTo, splitWords } from './core.js';
+import { gsap, dur, ease, stagger, headerH, prefersReduced, scrollTo, splitWords } from './core.js';
 
 const root = () => document.documentElement;
 const STAGE_MQ = '(min-width: 1024px) and (min-height: 640px) and (prefers-reduced-motion: no-preference)';
 const CARD_HIDDEN = 'inset(100% 0% 0% 0%)', CARD_SHOWN = 'inset(0% 0% 0% 0%)';
+const STAGE_FROM = 'inset(7% 7% 7% 7% round 28px)', STAGE_TO = 'inset(0% 0% 0% 0% round 0px)';
 const IRIS_HIDDEN = 'circle(0% at 50% 72%)', IRIS_SHOWN = 'circle(150% at 50% 72%)';
 
 export function initHero({ onIndex }) {
@@ -63,14 +64,6 @@ export function initHero({ onIndex }) {
     onIndex(i);
   };
 
-  /** The card's box as an inset() inside the hero — where the stage starts. `grow` shrinks it for the intro. */
-  function windowRect(grow) {
-    const h = hero.getBoundingClientRect(), m = media.getBoundingClientRect();
-    let t = m.top - h.top, l = m.left - h.left, r = h.right - m.right, b = h.bottom - m.bottom;
-    if (grow) { const dx = m.width * grow, dy = m.height * grow; t += dy; b += dy; l += dx; r += dx; }
-    return `inset(${t.toFixed(1)}px ${r.toFixed(1)}px ${b.toFixed(1)}px ${l.toFixed(1)}px round ${grow ? 28 : 16}px)`;
-  }
-
   const ctx = gsap.context(() => {
     /* ---------- headline words (shared by intro + scroll story) ---------- */
     const words = splitWords(h1);
@@ -99,10 +92,10 @@ export function initHero({ onIndex }) {
         .fromTo([glassA, glassB], { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 0.9, stagger: stagger.loose }, 0.7);
 
       if (staged) {
-        tl.set(stage, { opacity: 1 }, 0)
-          .fromTo(stage, { clipPath: () => windowRect(0.1) }, { clipPath: () => windowRect(), duration: 1.2, ease: 'power4.inOut' }, 0)
-          .fromTo(sSlide1, { scale: 1.25 }, { scale: 1, duration: 1.6, ease: 'power3.out' }, 0)
-          .fromTo(media, { opacity: 0 }, { opacity: 1, duration: 1, ease: 'power2.out' }, 0.3)
+        // the full-bleed photograph opens from a rounded inset to the full viewport while it settles from a slight zoom
+        tl.set([stage, media], { opacity: 1 }, 0)
+          .fromTo(stage, { clipPath: STAGE_FROM }, { clipPath: STAGE_TO, duration: 1.3, ease: 'power4.inOut', clearProps: 'clipPath' }, 0)
+          .fromTo(sSlide1, { scale: 1.2 }, { scale: 1, duration: 1.8, ease: 'power3.out' }, 0)
           .fromTo(cue, { opacity: 0 }, { opacity: 1, duration: 0.8, ease: 'power2.out' }, 1.5);
       } else {
         tl.fromTo(media, { opacity: 1, clipPath: 'inset(10% 10% 10% 10% round 28px)' }, { clipPath: 'inset(0% 0% 0% 0% round 16px)', duration: 1.2, ease: 'power4.inOut', clearProps: 'clipPath' }, 0)
@@ -161,29 +154,16 @@ export function initHero({ onIndex }) {
   // Desktop: the pinned film.
   mm.add(STAGE_MQ, () => {
     html.classList.add('hero-stage');
-    gsap.set(stage, { clipPath: windowRect() });
     idx = 0; onIndex(0);
 
     const w1 = splitWords(cap1), w2 = splitWords(cap2);
     gsap.set(w1.concat(w2), { yPercent: 112 });
     const rest = [copy.querySelector('.pill'), copy.querySelector('.hero__sub'), copy.querySelector('.hero__cta'), copy.querySelector('.hero__meta')];
 
-    // The card → full-bleed expansion depends on layout, so it is computed from a cached measurement
-    // (refreshed on ScrollTrigger refresh) rather than recorded by a tween.
-    let win = null;
-    const measure = () => {
-      const h = hero.getBoundingClientRect(), m = media.getBoundingClientRect();
-      win = { t: m.top - h.top, r: h.right - m.right, b: h.bottom - m.bottom, l: m.left - h.left };
-    };
-    const clipEase = gsap.parseEase('power2.inOut');
-    const updateClip = () => {
-      if (!win) measure();
-      const k = 1 - clipEase(gsap.utils.clamp(0, 1, (tl.progress() - 0.02) / 0.34));
-      stage.style.clipPath = `inset(${(win.t * k).toFixed(1)}px ${(win.r * k).toFixed(1)}px ${(win.b * k).toFixed(1)}px ${(win.l * k).toFixed(1)}px round ${(16 * k).toFixed(1)}px)`;
-    };
+    // headroom so the pointer parallax never exposes the photograph's edge
+    gsap.set(sImg1, { scale: 1.06 });
 
     const tl = gsap.timeline({
-      onUpdate: updateClip,
       defaults: { ease: 'none' },
       scrollTrigger: {
         trigger: hero,
@@ -193,7 +173,7 @@ export function initHero({ onIndex }) {
         scrub: 0.7,
         anticipatePin: 1,
         // NB: no invalidateOnRefresh — it would re-read the *current* DOM (mid-intro / scrolled) as the
-        // timeline's start values. Layout-dependent values are measured explicitly instead (see updateClip).
+        // timeline's start values; every tween below states its start values explicitly instead.
         onUpdate: (self) => {
           setIdx(self.progress >= 0.6 ? 1 : 0);
           // once the copy has faded out, take it out of the tab order too
@@ -207,21 +187,20 @@ export function initHero({ onIndex }) {
     // Explicit start values (immediateRender:false): the intro owns the first ~2s, so the scroll
     // timeline must never record the pre-intro "hidden" state as its own starting point.
     const NR = { immediateRender: false };
-    tl.fromTo(media, { opacity: 1 }, { opacity: 0, duration: 0.06, ...NR }, 0)
-      .fromTo(cue, { opacity: 1 }, { opacity: 0, duration: 0.04, ...NR }, 0)
+    tl.fromTo(cue, { opacity: 1 }, { opacity: 0, duration: 0.04, ...NR }, 0)
       .fromTo(words, { yPercent: 0 }, { yPercent: -115, duration: 0.14, stagger: 0.012, ease: 'power2.in', ...NR }, 0)
       .fromTo(rest, { opacity: 1, y: 0 }, { opacity: 0, y: -30, duration: 0.12, stagger: 0.02, ...NR }, 0)
       .fromTo(glassA, { x: 0, y: 0, opacity: 1 }, { x: -140, y: 80, opacity: 0, duration: 0.2, ...NR }, 0)
       .fromTo(glassB, { x: 0, y: 0, opacity: 1 }, { x: 140, y: -60, opacity: 0, duration: 0.2, ...NR }, 0)
       .fromTo([blobA, blobB], { opacity: 1 }, { opacity: 0, duration: 0.15, ...NR }, 0)
-      .to(sImg1, { scale: 1.18, duration: 1 }, 0)
-      .to(veil, { opacity: 1, duration: 0.3 }, 0.1)
-      .to(spot, { opacity: 1, duration: 0.2 }, 0.3)
+      .fromTo(sImg1, { scale: 1.06 }, { scale: 1.2, duration: 1, ...NR }, 0)
+      .fromTo(veil, { opacity: 0 }, { opacity: 1, duration: 0.2, ...NR }, 0.04) // deepens behind the big captions
+      .to(spot, { opacity: 1, duration: 0.2 }, 0.2)
       // 2. chapter one + outlined wordmark + HUD
-      .to(w1, { yPercent: 0, duration: 0.16, stagger: 0.025, ease: 'power3.out' }, 0.26)
-      .to(marquee, { opacity: 1, duration: 0.15 }, 0.3)
-      .fromTo(marqueeText, { xPercent: 4 }, { xPercent: -30, duration: 0.8 }, 0.25)
-      .fromTo(hud, { y: 20 }, { y: 0, autoAlpha: 1, duration: 0.1 }, 0.34)
+      .to(w1, { yPercent: 0, duration: 0.16, stagger: 0.025, ease: 'power3.out' }, 0.2)
+      .to(marquee, { opacity: 1, duration: 0.15 }, 0.22)
+      .fromTo(marqueeText, { xPercent: 4 }, { xPercent: -30, duration: 0.8 }, 0.2)
+      .fromTo(hud, { y: 20 }, { y: 0, autoAlpha: 1, duration: 0.1 }, 0.28)
       // 3. iris to the second photograph, chapter two
       .to(w1, { yPercent: -115, duration: 0.12, stagger: 0.015, ease: 'power2.in' }, 0.52)
       .fromTo(sSlide2, { clipPath: IRIS_HIDDEN }, { clipPath: IRIS_SHOWN, ease: 'power2.inOut', duration: 0.26, immediateRender: false }, 0.52)
@@ -231,7 +210,7 @@ export function initHero({ onIndex }) {
       // 4. call to action
       .fromTo(ocac, { y: 24 }, { y: 0, autoAlpha: 1, duration: 0.12 }, 0.82);
 
-    // pointer: parallax on the glass cards + image at rest, a cyan spotlight once the stage is full-bleed
+    // pointer: parallax on the glass cards + photograph at rest, plus a cyan spotlight that follows the cursor
     const hover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     let mx = 0, my = 0, cx = 0, cy = 0, px = 0.5, py = 0.5;
     const onMove = (e) => {
@@ -240,28 +219,19 @@ export function initHero({ onIndex }) {
       mx = px - 0.5; my = py - 0.5;
     };
     const drift = () => {
-      const k = Math.max(0, 1 - (tl.scrollTrigger ? tl.scrollTrigger.progress : 0) * 8); // fades out as the stage expands
+      const k = Math.max(0, 1 - (tl.scrollTrigger ? tl.scrollTrigger.progress : 0) * 6); // eases out as the film starts
       cx += (mx * k - cx) * 0.08; cy += (my * k - cy) * 0.08;
       glassA.style.translate = (-cx * 28).toFixed(1) + 'px ' + (-cy * 18).toFixed(1) + 'px';
       glassB.style.translate = (cx * 36).toFixed(1) + 'px ' + (cy * 22).toFixed(1) + 'px';
-      sSlide1.style.translate = (-cx * 14).toFixed(1) + 'px ' + (-cy * 10).toFixed(1) + 'px';
+      sImg1.style.translate = (-cx * 14).toFixed(1) + 'px ' + (-cy * 10).toFixed(1) + 'px';
       stage.style.setProperty('--sx', (px * 100).toFixed(1) + '%');
       stage.style.setProperty('--sy', (py * 100).toFixed(1) + '%');
     };
     if (hover) { hero.addEventListener('pointermove', onMove); gsap.ticker.add(drift); }
 
-    // keep the window glued to the card if layout shifts while still at rest
-    const onRefresh = () => {
-      measure();
-      if (tl.progress() > 0) updateClip(); // mid-film: re-apply with the fresh measurement
-      else if (!introTl || !introTl.isActive()) gsap.set(stage, { clipPath: windowRect() });
-    };
-    ScrollTrigger.addEventListener('refresh', onRefresh);
-
     return () => {
-      ScrollTrigger.removeEventListener('refresh', onRefresh);
       hero.removeEventListener('pointermove', onMove); gsap.ticker.remove(drift);
-      [glassA, glassB, sSlide1].forEach((el) => { el.style.translate = ''; });
+      [glassA, glassB, sImg1].forEach((el) => { el.style.translate = ''; });
       html.classList.remove('hero-stage');
       copy.style.visibility = ''; capsEl.style.visibility = '';
       pinnedTrigger = null;
