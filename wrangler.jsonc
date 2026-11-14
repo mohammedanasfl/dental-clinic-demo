@@ -1,0 +1,9 @@
+{
+  // Cloudflare Workers static-assets deploy (used by `npx wrangler deploy` in Cloudflare's build).
+  // The name must match the project name in the Cloudflare dashboard.
+  "name": "dental-clinic-demo",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist"
+  }
+}
