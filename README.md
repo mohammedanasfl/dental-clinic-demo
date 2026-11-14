@@ -2,36 +2,46 @@
 
 A single-page, scroll-driven website for a dental clinic (Home, About, Services, Appointment, Dentists, Contact), built with **React 18 + Vite**, with motion by **GSAP + ScrollTrigger**, **Lenis** and **Framer Motion**. The design follows the Stitch project "DentCare Website Redesign" (design system: *Porcelain & Cobalt Sanctuary*).
 
-**Live URL (GitHub Pages):** <https://mohammedanasfl.github.io/dental-clinic-demo/>
+**Live URL (Cloudflare):** <https://dental-clinic-demo.dentcare-demo.workers.dev/>
 
 ## Scripts
 
 ```bash
 npm install
 npm run dev       # dev server with hot reload  → http://localhost:5173/dental-clinic-demo/
-npm run build     # production build → docs/
+npm run build     # production build → docs/ (GitHub Pages path)
+npm run build:cloudflare   # production build for a root domain → dist/ (Cloudflare)
 npm run preview   # serve the production build → http://localhost:4173/dental-clinic-demo/
 npm run lint      # ESLint (react + react-hooks rules)
 ```
 
 Requires Node 20+.
 
-## Publish with GitHub Pages
+## Deploy on Cloudflare (live site)
 
-GitHub Pages serves the **`docs/`** folder of this branch, and `docs/` is the **build output** — never edit it by hand.
+The site is served by Cloudflare (Workers static assets), built from this repo on every push to `claude/quirky-allen-09nasi`.
 
-1. `npm run build`
-2. Commit the updated `docs/` together with your source changes and push.
-3. In **Settings → Pages**, the source stays **Deploy from a branch → /docs**.
+| Cloudflare build setting | Value |
+|---|---|
+| Build command | `npm run build:cloudflare` (no trailing characters) |
+| Deploy command | `npx wrangler deploy` |
+| Project name | `dental-clinic-demo` (must match `name` in `wrangler.jsonc`) |
 
-The site lives under `/dental-clinic-demo/`, which is set as Vite's `base`. For a custom domain or another path build with `BASE_PATH=/ npm run build`.
+- `wrangler.jsonc` points the deploy at `dist/`, the output of `npm run build:cloudflare` (built with `BASE_PATH=/`, so assets load from the site root).
+- Push to the branch → Cloudflare builds and deploys automatically. `dist/` is git-ignored.
+- The URL is `<project>.<account-subdomain>.workers.dev`; the account subdomain is set in the Cloudflare dashboard.
+
+### GitHub Pages (optional)
+
+`docs/` is the output of `npm run build` (base `/dental-clinic-demo/`), kept so the site can also be served from GitHub Pages. Never edit it by hand. Rebuild and commit it only if you still publish that way; it is not used by the Cloudflare deploy.
 
 ## Project structure
 
 ```
 .
 ├── index.html               Vite entry (preloads, motion-class bootstrap)
-├── vite.config.js           base path, build → docs/, vendor chunks
+├── vite.config.js           base path, build output (docs/ or dist/), vendor chunks
+├── wrangler.jsonc           Cloudflare static-assets deploy config (serves dist/)
 ├── public/                  Copied as-is into docs/
 │   ├── assets/fonts/        Outfit + Plus Jakarta Sans variable fonts (latin, preloaded)
 │   ├── assets/img/          Optimised WebP images
@@ -48,7 +58,8 @@ The site lives under `/dental-clinic-demo/`, which is set as Vite's `base`. For 
 │   │   └── lenis.js         Smooth wheel scrolling wired into ScrollTrigger
 │   ├── data/                Content (services, team, nav, contact) and the SVG icon sprite
 │   └── styles/main.css      Design tokens and all styles
-└── docs/                    Build output (published)
+├── docs/                    Build output for GitHub Pages (optional)
+└── dist/                    Build output for Cloudflare (git-ignored)
 ```
 
 ### How the motion is split
