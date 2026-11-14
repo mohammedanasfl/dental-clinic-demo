@@ -4,11 +4,12 @@ import react from '@vitejs/plugin-react';
 // GitHub Pages serves the repository at /<repo-name>/ and the `docs/` folder is the publish root,
 // so the production build is emitted straight into docs/. Override the base for a custom domain:
 //   BASE_PATH=/ npm run build
+// `npm run build:cloudflare` builds for a root domain (Cloudflare Pages etc.) into dist/ and leaves docs/ alone.
 export default defineConfig({
   base: process.env.BASE_PATH ?? '/dental-clinic-demo/',
   plugins: [react()],
   build: {
-    outDir: 'docs',
+    outDir: process.env.OUT_DIR ?? 'docs',
     emptyOutDir: true, // docs/ is build output only; static extras live in public/
     sourcemap: false,
     rollupOptions: {
